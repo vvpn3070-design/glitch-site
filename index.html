@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLITCH</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%}
+#main{z-index:1}
+#overlay{z-index:2;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="main"></canvas>
+<canvas id="overlay"></canvas>
+<script>
+const FILES=[
+"IMG_20260716_181114_464.jpg",
+"IMG_20260716_181115_402.jpg",
+"IMG_20260716_181117_410.jpg",
+"IMG_20260716_181114_464 (1).jpg",
+"IMG_20260716_181114_464.jpg"
+];
+
+const INTERVAL=3500;
+const GLITCH_MS=900;
+
+const main=document.getElementById("main");
+const over=document.getElementById("overlay");
+const mc=main.getContext("2d");
+const oc=over.getContext("2d");
+let W,H;
+function resize(){W=innerWidth;H=innerHeight;main.width=over.width=W;main.height=over.height=H}
+resize();addEventListener("resize",resize);
+
+const imgs=[];
+let ready=0;
+FILES.forEach((f,i)=>{
+  const im=new Image();
+  im.onload=()=>{ready++};
+  im.src=f;
+  imgs[i]=im;
+});
+
+let cur=0,nxt=1;
+let glitching=false,glitchT=0;
+let elapsed=0,prev=0;
+
+function cover(ctx,img){
+  if(!img.complete||!img.naturalWidth)return;
+  const s=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+  const w=img.naturalWidth*s,h=img.naturalHeight*s;
+  ctx.drawImage(img,(W-w)/2,(H-h)/2,w,h);
+}
+
+function startGlitch(){glitching=true;glitchT=0}
+
+function glitchFrame(p){
+  const i=p<.25?p/.25:p>.75?(1-p)/.25:1;
+  oc.clearRect(0,0,W,H);
+  const img=imgs[cur];
+  if(!img.complete||!img.naturalWidth)return;
+  const s=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+  const dw=img.naturalWidth*s,dh=img.naturalHeight*s;
+  const ox=(W-dw)/2,oy=(H-dh)/2;
+
+  const slices=4+~~(Math.random()*7);
+  for(let k=0;k<slices;k++){
+    const sy=Math.random()*H;
+    const sh=2+Math.random()*H*.1;
+    const sx=(Math.random()-.5)*W*.3*i;
+    oc.globalAlpha=.3+Math.random()*.7;
+    oc.drawImage(img,0,(sy-oy)/s,dw,sh/s, sx,sy,W,sh);
+  }
+
+  for(let k=0;k<~~(2+Math.random()*5*i);k++){
+    const by=Math.random()*H;
+    const bh=4+Math.random()*30*i;
+    const bx=(Math.random()-.5)*60*i;
+    oc.globalAlpha=.4+Math.random()*.6;
+    oc.drawImage(img,0,(by-oy)/s,dw,bh/s, bx,by,W,bh);
+  }
+
+  oc.globalAlpha=i*.12;
+  for(let k=0;k<~~(30+Math.random()*40);k++){
+    oc.fillStyle=Math.random()>.5?"#fff":"#000";
+    oc.fillRect(0,Math.random()*H,W,1+Math.random()*2);
+  }
+
+  oc.globalAlpha=i*.6;
+  for(let k=0;k<~~(2+Math.random()*3);k++){
+    oc.fillStyle=`rgba(255,255,255,${.2+Math.random()*.5})`;
+    oc.fillRect(0,Math.random()*H,W,1+Math.random());
+  }
+
+  if(i>.8&&Math.random()>.7){
+    oc.globalAlpha=.06*i;
+    oc.fillStyle="#fff";
+    oc.fillRect(0,0,W,H);
+  }
+
+  oc.globalAlpha=1;
+  oc.globalCompositeOperation="source-over";
+}
+
+function tick(ts){
+  if(!prev)prev=ts;
+  const dt=ts-prev;prev=ts;
+  if(ready<imgs.length){requestAnimationFrame(tick);return}
+
+  elapsed+=dt;
+  mc.fillStyle="#000";mc.fillRect(0,0,W,H);
+  cover(mc,imgs[cur]);
+
+  if(glitching){
+    glitchT+=dt;
+    const p=glitchT/GLITCH_MS;
+    if(p>=1){
+      glitching=false;
+      cur=nxt;
+      nxt=(nxt+1)%imgs.length;
+      elapsed=0;
+      oc.clearRect(0,0,W,H);
+    } else {
+      glitchFrame(p);
+    }
+  } else if(elapsed>=INTERVAL){
+    startGlitch();
+  }
+
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
