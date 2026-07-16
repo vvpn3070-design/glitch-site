@@ -50,7 +50,7 @@ let elapsed=0,prev=0;
 
 function cover(ctx,img){
   if(!img.complete||!img.naturalWidth)return;
-  const s=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+  const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
   const w=img.naturalWidth*s,h=img.naturalHeight*s;
   ctx.drawImage(img,(W-w)/2,(H-h)/2,w,h);
 }
@@ -62,7 +62,7 @@ function glitchFrame(p){
   oc.clearRect(0,0,W,H);
   const img=imgs[cur];
   if(!img.complete||!img.naturalWidth)return;
-  const s=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+  const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
   const dw=img.naturalWidth*s,dh=img.naturalHeight*s;
   const ox=(W-dw)/2,oy=(H-dh)/2;
 
